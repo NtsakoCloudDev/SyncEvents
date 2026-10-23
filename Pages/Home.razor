@@ -6,13 +6,22 @@
 
 <section class="intro">
     <div class="intro-copy">
-        <p class="eyebrow">YOUR NEIGHBOURHOOD, IN GOOD COMPANY</p>
-        <h1>Make room for <em>something good.</em></h1>
-        <p class="intro-text">Find a local gathering, meet new people, and make a day of it.</p>
+        <p class="eyebrow">SYNC EVENTS / YOUR LOCAL FIELD GUIDE</p>
+        <h1>Make a little<br /><em>more of today.</em></h1>
+        <p class="intro-text">Good people, interesting places, and something worth leaving home for.</p>
+        <div class="hero-actions">
+            <a class="hero-button" href="#events">Explore the line-up <span aria-hidden="true">↘</span></a>
+            <span class="hero-meta">Small plans. Great stories.</span>
+        </div>
     </div>
+    <figure class="hero-image">
+        <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&amp;fit=crop&amp;w=1200&amp;q=85"
+             alt="A crowd gathered together for an outdoor live event" fetchpriority="high" />
+        <figcaption><span>OUT THERE IS BETTER</span><span>VOL. 01 / 04</span></figcaption>
+    </figure>
     <div class="intro-note" aria-label="Upcoming events summary">
-        <span class="note-number">@EventService.Events.Count</span>
-        <span>upcoming gatherings<br />with room for you</span>
+        <span class="note-number">@EventService.Events.Count.ToString("00")</span>
+        <span>upcoming events<br />to get you out there</span>
     </div>
 </section>
 
@@ -20,8 +29,8 @@
     <div class="event-browser">
         <div class="section-heading">
             <div>
-                <p class="eyebrow">THE LOCAL LINE-UP</p>
-                <h2 id="events-heading">Upcoming events</h2>
+                <p class="eyebrow">PICK YOUR NEXT PLAN</p>
+                <h2 id="events-heading">On the calendar</h2>
             </div>
             <span class="event-count">@FilteredEvents.Count() found</span>
         </div>
@@ -58,7 +67,10 @@
                                 <strong>@eventItem.Title</strong>
                                 <span class="event-meta">@eventItem.StartsAt.ToString("dddd, h:mm tt") <span aria-hidden="true">·</span> @eventItem.Venue</span>
                             </span>
-                            <span class="seat-count">@(eventItem.IsFull ? "Full" : $"{eventItem.AvailableSeats} spots")</span>
+                            <span class="event-row-end">
+                                <span class="seat-count">@(eventItem.IsFull ? "Full" : $"{eventItem.AvailableSeats} spots")</span>
+                                <span class="event-arrow" aria-hidden="true">↗</span>
+                            </span>
                         </button>
                     </article>
                 }
