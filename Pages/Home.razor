@@ -1,0 +1,163 @@
+@page "/"
+@inject EventService EventService
+@inject UserSessionState SessionState
+
+<PageTitle>SyncEvents | Find your next local event</PageTitle>
+
+<section class="intro">
+    <div class="intro-copy">
+        <p class="eyebrow">YOUR NEIGHBOURHOOD, IN GOOD COMPANY</p>
+        <h1>Make room for <em>something good.</em></h1>
+        <p class="intro-text">Find a local gathering, meet new people, and make a day of it.</p>
+    </div>
+    <div class="intro-note" aria-label="Upcoming events summary">
+        <span class="note-number">@EventService.Events.Count</span>
+        <span>upcoming gatherings<br />with room for you</span>
+    </div>
+</section>
+
+<section class="event-workspace" id="events" aria-labelledby="events-heading">
+    <div class="event-browser">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">THE LOCAL LINE-UP</p>
+                <h2 id="events-heading">Upcoming events</h2>
+            </div>
+            <span class="event-count">@FilteredEvents.Count() found</span>
+        </div>
+
+        <div class="filters">
+            <label class="search-field">
+                <span class="visually-hidden">Search events</span>
+                <input type="search" placeholder="Search events or places" @bind="searchQuery" @bind:event="oninput" />
+            </label>
+            <label class="category-field">
+                <span class="visually-hidden">Filter by category</span>
+                <select @bind="selectedCategory">
+                    @foreach (var category in EventService.Categories)
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </select>
+            </label>
+        </div>
+
+        @if (FilteredEvents.Any())
+        {
+            <div class="event-list">
+                @foreach (var eventItem in FilteredEvents)
+                {
+                    <article class="event-row @(SelectedEvent?.Id == eventItem.Id ? "is-selected" : string.Empty)" @key="eventItem.Id">
+                        <button class="event-summary" type="button" @onclick="() => SelectEvent(eventItem)" aria-pressed="@(SelectedEvent?.Id == eventItem.Id)">
+                            <span class="date-block">
+                                <span>@eventItem.StartsAt.ToString("MMM")</span>
+                                <strong>@eventItem.StartsAt.ToString("dd")</strong>
+                            </span>
+                            <span class="event-copy">
+                                <span class="event-category">@eventItem.Category</span>
+                                <strong>@eventItem.Title</strong>
+                                <span class="event-meta">@eventItem.StartsAt.ToString("dddd, h:mm tt") <span aria-hidden="true">·</span> @eventItem.Venue</span>
+                            </span>
+                            <span class="seat-count">@(eventItem.IsFull ? "Full" : $"{eventItem.AvailableSeats} spots")</span>
+                        </button>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <h3>No events found</h3>
+                <p>Try a different search or category.</p>
+            </div>
+        }
+    </div>
+
+    <aside class="registration-panel" aria-labelledby="registration-heading">
+        @if (SelectedEvent is not null)
+        {
+            <p class="eyebrow">SAVE YOUR SPOT</p>
+            <h2 id="registration-heading">You're invited.</h2>
+            <p class="selected-event-name">@SelectedEvent.Title</p>
+            <p class="selected-event-meta">@SelectedEvent.StartsAt.ToString("dddd, MMMM d · h:mm tt")<br />@SelectedEvent.Venue</p>
+
+            @if (SelectedEvent.IsFull)
+            {
+                <p class="form-message error-message" role="status">This event is full. Choose another event to register.</p>
+            }
+            else
+            {
+                <form class="registration-form" @onsubmit="Register" @onsubmit:preventDefault="true">
+                    <label for="attendee-name">Your name</label>
+                    <input id="attendee-name" name="name" autocomplete="name" required maxlength="80" @bind="attendeeName" />
+
+                    <label for="attendee-email">Email address</label>
+                    <input id="attendee-email" name="email" type="email" autocomplete="email" required maxlength="254" @bind="attendeeEmail" />
+
+                    <button class="register-button" type="submit">Register for free <span aria-hidden="true">→</span></button>
+                    @if (!string.IsNullOrWhiteSpace(registrationMessage))
+                    {
+                        <p class="form-message @(registrationSucceeded ? "success-message" : "error-message")" role="status">@registrationMessage</p>
+                    }
+                    <p class="privacy-note">Registration is saved for this demo session.</p>
+                </form>
+            }
+        }
+        else
+        {
+            <p class="eyebrow">SAVE YOUR SPOT</p>
+            <h2 id="registration-heading">Choose an event.</h2>
+            <p class="selected-event-meta">Select a gathering from the list to see details and register.</p>
+        }
+    </aside>
+</section>
+
+@code {
+    private EventItem? SelectedEvent { get; set; }
+    private string searchQuery = string.Empty;
+    private string selectedCategory = "All events";
+    private string attendeeName = string.Empty;
+    private string attendeeEmail = string.Empty;
+    private string registrationMessage = string.Empty;
+    private bool registrationSucceeded;
+
+    private IEnumerable<EventItem> FilteredEvents => EventService.Events
+        .Where(eventItem => selectedCategory == "All events" || eventItem.Category == selectedCategory)
+        .Where(eventItem => string.IsNullOrWhiteSpace(searchQuery)
+            || eventItem.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+            || eventItem.Venue.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .OrderBy(eventItem => eventItem.StartsAt);
+
+    protected override void OnInitialized()
+    {
+        SelectedEvent = EventService.Events.FirstOrDefault();
+        attendeeName = SessionState.LastAttendeeName ?? string.Empty;
+    }
+
+    private void SelectEvent(EventItem eventItem)
+    {
+        SelectedEvent = eventItem;
+        registrationMessage = string.Empty;
+    }
+
+    private void Register()
+    {
+        if (SelectedEvent is null)
+        {
+            return;
+        }
+
+        if (EventService.TryRegister(SelectedEvent.Id, attendeeName, attendeeEmail, out var error))
+        {
+            SessionState.RememberAttendee(attendeeName);
+            registrationSucceeded = true;
+            registrationMessage = $"You're registered for {SelectedEvent.Title}.";
+            attendeeEmail = string.Empty;
+        }
+        else
+        {
+            registrationSucceeded = false;
+            registrationMessage = error;
+        }
+    }
+}

@@ -1,0 +1,23 @@
+@inherits LayoutComponentBase
+
+<div class="site-shell">
+    <header class="site-header">
+        <a class="brand" href="/" aria-label="SyncEvents home">
+            <span class="brand-mark" aria-hidden="true">S</span>
+            <span>Sync<span class="brand-accent">Events</span></span>
+        </a>
+        <nav aria-label="Main navigation">
+            <a href="/#events">Explore events</a>
+            <a class="header-link" href="/#about">About</a>
+        </nav>
+    </header>
+
+    <main>
+        @Body
+    </main>
+
+    <footer class="site-footer" id="about">
+        <span>SyncEvents</span>
+        <span>Good things happen when we get together.</span>
+    </footer>
+</div>
